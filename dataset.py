@@ -9,7 +9,7 @@ from pytorch_lightning import LightningDataModule
 class CustomDataset(Dataset):
     def __init__(self, split):
         assert split in ["train", "val", "test"]
-        data_root = "/home/pengzerui/project/AItask/"
+        data_root = os.getcwd()+"/"
         self.data = [os.path.join(data_root, split, i) for i in os.listdir(data_root + split)]
         if split == "train":
             self.transforms = transforms.Compose([

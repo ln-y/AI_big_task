@@ -1,6 +1,7 @@
 import os, shutil
 import random
 
+# using this code to split `val`
 # f_lst=[]
 # for r,d,f in os.walk("train"):
 #     for fi in f:
