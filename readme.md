@@ -1,7 +1,17 @@
 ### 环境配置
-依赖项已在`requirements.txt`列出，使用下述命令安装
+由于版本与大作业指导手册同步，采用了较老的版本，环境配置较为特殊，请遵循以下操作：
+
+**linux**
+```bash
+#进入到对应的python环境
+source runme.sh
+```
+
+**windows**
 ```bash
 pip install -r requirements.txt
+pip install torch==1.8.2 torchvision==0.9.2 torchaudio==0.8.2 --extra-index-url https://download.pytorch.org/whl/lts/1.8/cu111
+pip install numpy==1.19.0
 ```
 
 ### 数据集与权重
