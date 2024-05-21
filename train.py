@@ -1,6 +1,7 @@
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
+from pytorch_lightning.strategies import DDPStrategy
 
 from model import ViolenceClassifier
 from dataset import CustomDataModule
@@ -26,9 +27,11 @@ if __name__ == '__main__':
 
     # 实例化训练器
     trainer = Trainer(
-        max_epochs=1000,
-        accelerator='gpu',
-        devices=gpu_id,
+        max_epochs=40,
+        #accelerator='gpu',
+        accelerator='cpu',
+        #devices=gpu_id,
+        devices=1,
         logger=logger,
         callbacks=[checkpoint_callback]
     )
