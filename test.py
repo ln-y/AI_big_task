@@ -1,4 +1,6 @@
 import os
+import torch
+
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import TensorBoardLogger
 
@@ -7,7 +9,9 @@ from dataset import CustomDataModule
 
 from train import model_weight_path
 
-gpu_id = [0]
+acc_device='gpu' if torch.cuda.is_available() else 'cpu'
+print(f"using {acc_device=}")
+acc_id = [1] if torch.cuda.is_available() else None
 batch_size = 128
 log_name = "resnet18_pretrain"
 
@@ -17,5 +21,5 @@ ckpt_path = ckpt_root + "/resnet18_pretrain_test/version_0/checkpoints/resnet18_
 logger = TensorBoardLogger("test_logs", name=log_name)
 
 model = ViolenceClassifier.load_from_checkpoint(ckpt_path)
-trainer = Trainer(accelerator='gpu', devices=gpu_id)
+trainer = Trainer(accelerator=acc_device, devices=acc_id)
 trainer.test(model, data_module)
