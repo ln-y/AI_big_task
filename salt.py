@@ -13,9 +13,11 @@ def add_salt_and_pepper_noise(image, noise_density=0.05):
     # 将图像转换为数组
     image_np = np.array(image)
 
+    image_size=image_np.shape[0]*image_np.shape[1]
+
     # 计算噪声像素的数量
-    num_salt = np.ceil(noise_density * image_np.size * 0.5)
-    num_pepper = np.ceil(noise_density * image_np.size * 0.5)
+    num_salt = np.ceil(noise_density * image_size * 0.5)
+    num_pepper = np.ceil(noise_density * image_size * 0.5)
 
     # 在图像中随机选择噪声像素的位置
     coords = [np.random.randint(0, i - 1, int(num_salt)) for i in image_np.shape]
@@ -50,4 +52,4 @@ input_directory = 'test'
 output_directory = 'salt'
 
 # 执行加噪声处理
-process_images(input_directory, output_directory)
+process_images(input_directory, output_directory,0.04)
