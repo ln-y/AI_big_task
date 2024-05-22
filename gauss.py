@@ -4,7 +4,7 @@ from PIL import Image
 import shutil
 
 
-def add_gaussian_noise(image, mean=0, std=25):
+def add_gaussian_noise(image, mean=0, std=25.5):
     """
     向图像添加高斯噪声
     :param image: PIL图像对象
@@ -29,7 +29,7 @@ def add_gaussian_noise(image, mean=0, std=25):
     return noisy_image
 
 
-def process_images(input_directory, output_directory, mean=0, std=0.1):
+def process_images(input_directory, output_directory, mean=0, std=25.5):
     # 确保输出目录存在
     if not os.path.exists(output_directory):
         os.makedirs(output_directory)
