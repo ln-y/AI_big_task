@@ -56,5 +56,3 @@ if __name__ == '__main__':
             print(f"Testing on {subfolder} images")
             data_module.set_test_path(subfolder_path)
             trainer.test(model, data_module)
-
-

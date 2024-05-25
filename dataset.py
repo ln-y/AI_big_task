@@ -30,7 +30,7 @@ class CustomDataset(Dataset):
 
     def __getitem__(self, index):
         img_path = self.data[index]
-        x = Image.open(img_path)
+        x = Image.open(img_path).convert("RGB")
         y = int(os.path.basename(img_path)[0]) # 获取标签值，0代表非暴力，1代表暴力
         x = self.transforms(x)
         return x, y
