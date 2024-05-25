@@ -29,8 +29,10 @@ if __name__ == '__main__':
     trainer.test(model, data_module)
 
     # 对抗测试集：FGSM, BIM, PGD, C&W
-    attacks = ['images/model4']
+    attacks = ['fgsm', 'bim', 'pgd', 'c_w']
     for attack in attacks:
         print(f"Testing on {attack.upper()} perturbed data")
         data_module.set_test_path(os.path.join(os.getcwd(), attack))
         trainer.test(model, data_module)
+
+    
