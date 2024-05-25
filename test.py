@@ -24,13 +24,37 @@ if __name__ == '__main__':
     model = ViolenceClassifier.load_from_checkpoint(ckpt_path)
     trainer = Trainer(accelerator=device, devices=device_count)
 
-    # 测试原始测试数据
-    print("Testing on original test data")
-    trainer.test(model, data_module)
+    # # 测试原始测试数据
+    # print("Testing on original test data")
+    # trainer.test(model, data_module)
+    #
+    # # 测试高斯噪声
+    # print("Testing on gauss noise data")
+    # data_module.set_test_path(os.path.join(os.getcwd(), 'gauss'))
+    # trainer.test(model, data_module)
+    #
+    # # 测试椒盐噪声
+    # print("Testing on Salt and Pepper Noise data")
+    # data_module.set_test_path(os.path.join(os.getcwd(), 'salt'))
+    # trainer.test(model, data_module)
+    #
+    # # 对抗测试集：FGSM, BIM, PGD, C&W
+    # attacks = ['fgsm', 'bim', 'pgd', 'c_w']
+    # for attack in attacks:
+    #     print(f"Testing on {attack.upper()} perturbed data")
+    #     data_module.set_test_path(os.path.join(os.getcwd(), attack))
+    #     trainer.test(model, data_module)
 
-    # 对抗测试集：FGSM, BIM, PGD, C&W
-    attacks = ['fgsm', 'bim', 'pgd', 'c_w']
-    for attack in attacks:
-        print(f"Testing on {attack.upper()} perturbed data")
-        data_module.set_test_path(os.path.join(os.getcwd(), attack))
-        trainer.test(model, data_module)
+    # 测试AIGC训练集
+    print("Testing on AIGC pictures")
+    images_dir = os.path.join(os.getcwd(), 'images')
+
+    for subfolder in os.listdir(images_dir):
+
+        subfolder_path = os.path.join(images_dir, subfolder)
+        if os.path.isdir(subfolder_path):
+            print(f"Testing on {subfolder} images")
+            data_module.set_test_path(subfolder_path)
+            trainer.test(model, data_module)
+
+
