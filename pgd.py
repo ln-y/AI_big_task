@@ -1,14 +1,27 @@
 import torch
 from torchvision import transforms
 from PIL import Image
-import os
+import os, shutil
+from tqdm import tqdm
 from model import ViolenceClassifier  # 从model.py中导入模型类
+import argparse
+import random
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-model',type=str,help="path of model file *.ckpt")
+parser.add_argument('-eps',type=float,help="the value of `epsilon`")
+parser.add_argument('-num',type=int,default=-1,help="the num of samples")
+args = parser.parse_args()
+print(args)
+
+device="cuda" if torch.cuda.is_available() else "cpu"
 
 # 加载模型并设置为评估模式
 model = ViolenceClassifier()
-model_path = 'model/resnet18_pretrain_test-epoch=10-val_loss=0.06.ckpt'
+model_path = args.model
 model.load_from_checkpoint(model_path)
 model.eval()
+model.to(device)
 
 def load_image(image_path):
     # 图像预处理步骤
@@ -24,8 +37,8 @@ def load_image(image_path):
 
 def pgd_attack(model, image, label, epsilon, alpha, iters):
     """Perform the PGD attack on an image."""
-    original_image = image.clone().detach()  # 保存原始图像以便后续使用
-    perturbed_image = original_image + 0.001 * torch.randn_like(original_image)  # 初始随机扰动
+    original_image = image.clone().detach().to(device)  # 保存原始图像以便后续使用
+    perturbed_image = original_image + 0.001 * torch.randn_like(original_image).to(device)  # 初始随机扰动
 
     for _ in range(iters):
         perturbed_image.requires_grad = True
@@ -45,11 +58,16 @@ def pgd_attack(model, image, label, epsilon, alpha, iters):
 
 def save_perturbed_images(directory, pgd_directory, epsilon, alpha, iters):
     # 确保输出文件夹存在
-    if not os.path.exists(pgd_directory):
-        os.makedirs(pgd_directory)
+    if os.path.exists(pgd_directory):
+        shutil.rmtree(pgd_directory)
+    os.makedirs(pgd_directory)
 
+    files=os.listdir(directory)
+    random.shuffle(files)
+    if args.num>0:
+        files=files[:args.num]
     # 遍历目录中的所有图片
-    for filename in os.listdir(directory):
+    for filename in tqdm(files,desc="generating"):
         if filename.endswith(".jpg"):
             image_path = os.path.join(directory, filename)
             image = load_image(image_path)
@@ -60,12 +78,12 @@ def save_perturbed_images(directory, pgd_directory, epsilon, alpha, iters):
             save_path = os.path.join(pgd_directory, filename)
             save_image = transforms.ToPILImage()(perturbed_image.squeeze(0))
             save_image.save(save_path)
-            print(filename + ' Saved')
+            # print(filename + ' Saved')
 
 # 设置目录和参数
 test_directory = 'test'
-pgd_directory = 'pgd'  # 改为PGD文件夹
-epsilon = 0.1  # 扰动的最大范围
+pgd_directory = f'pgd_eps={args.eps}'  # 改为PGD文件夹
+epsilon = args.eps  # 扰动的最大范围
 alpha = 0.01    # 每步攻击的步长
 iters = 40      # 迭代次数
 

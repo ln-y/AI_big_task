@@ -13,8 +13,8 @@ model_weight_path="train_logs"
 if __name__ == '__main__':
     acc_device='gpu' if torch.cuda.is_available() else 'cpu'
     print(f"using {acc_device=}")
-    acc_id = [1] if torch.cuda.is_available() else None
-    lr = 3e-5
+    acc_id = [2] if torch.cuda.is_available() else None
+    lr = 1e-6
     batch_size = 128
     log_name = "resnet18_pretrain_test"
     print("{} {}: {}, batch size: {}, lr: {}".format(log_name,acc_device, acc_id, batch_size, lr))
@@ -27,20 +27,24 @@ if __name__ == '__main__':
         save_top_k=1,
         mode='min',
     )
+    checkpoint_callback1=ModelCheckpoint(
+        monitor='val_acc',
+        filename=log_name + '-{epoch:02d}-{val_acc:.2f}',
+        save_top_k=1,
+        mode='max',
+    )
     logger = TensorBoardLogger(model_weight_path, name=log_name)
 
     # 实例化训练器
     trainer = Trainer(
-
-        max_epochs=1000,
+        logger= logger,
+        max_epochs=300,
         accelerator=acc_device,
         devices=acc_id,
-
-        logger=logger,
-        callbacks=[checkpoint_callback]
+        callbacks=[checkpoint_callback,checkpoint_callback1]
     )
 
     # 实例化模型
-    model = ViolenceClassifier(learning_rate=lr)
+    model = ViolenceClassifier(learning_rate=lr,l2_param=3e-4)
     # 开始训练
     trainer.fit(model, data_module)

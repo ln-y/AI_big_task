@@ -7,7 +7,7 @@ from pytorch_lightning import LightningDataModule
 
 
 class CustomDataset(Dataset):
-    def __init__(self, split, data_root='test'):
+    def __init__(self, split, data_root=None):
         assert split in ["train", "val", "test"]
         if split == "train":
             self.transforms = transforms.Compose([
@@ -15,16 +15,15 @@ class CustomDataset(Dataset):
                 transforms.ToTensor(),  # 将图像转换为Tensor
             ])
         else:
-            if split == "test":
-                # 使用指定的测试目录
-                split_path = data_root
-            else:
-                split_path = os.path.join(os.getcwd(), split)
-            self.data = [os.path.join(split_path, i) for i in os.listdir(split_path)]
             self.transforms = transforms.Compose([
                 transforms.ToTensor(),  # 将图像转换为Tensor
             ])
-
+        if data_root is not None:
+            split_path=os.path.join(os.getcwd(),data_root)
+        else:
+            split_path = os.path.join(os.getcwd(), split)
+        self.data = [os.path.join(split_path, i) for i in os.listdir(split_path)]
+            
     def __len__(self):
         return len(self.data)
 
