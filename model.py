@@ -7,7 +7,7 @@ from pytorch_lightning import LightningModule
 
 
 class ViolenceClassifier(LightningModule):
-    def __init__(self, num_classes=2, learning_rate=1e-3):
+    def __init__(self, num_classes=2, learning_rate=1e-3, l2_param= 1e-5):
         super().__init__()
         self.model = models.resnet18(pretrained=True)
         num_ftrs = self.model.fc.in_features
@@ -17,12 +17,13 @@ class ViolenceClassifier(LightningModule):
         self.learning_rate = learning_rate
         self.loss_fn = nn.CrossEntropyLoss()  # 交叉熵损失
         self.accuracy = Accuracy(task="multiclass", num_classes=2)
+        self.l2_param=l2_param
 
     def forward(self, x):
         return self.model(x)
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)  # 定义优化器
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate, weight_decay=self.l2_param)  # 定义优化器
         return optimizer
 
     def training_step(self, batch, batch_idx):

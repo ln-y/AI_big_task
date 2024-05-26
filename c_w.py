@@ -2,14 +2,28 @@ import torch
 import torch.nn.functional as F
 from torchvision import transforms
 from PIL import Image
-import os
+import os, shutil
+from tqdm import tqdm
 from model import ViolenceClassifier  # Import from model.py
+import random
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-model',type=str,help="path of model file *.ckpt")
+parser.add_argument('-eps',type=float,help="the value of `ep`")
+parser.add_argument('-num',type=int,default=-1,help="the num of samples")
+args = parser.parse_args()
+print(args)
+
+
+device="cuda" if torch.cuda.is_available() else "cpu"
 
 # Load model and set to evaluation mode
 model = ViolenceClassifier()
-model_path = 'model/resnet18_pretrain_test-epoch=10-val_loss=0.06.ckpt'
+model_path = args.model
 model.load_from_checkpoint(model_path)
 model.eval()
+model.to(device)
 
 def load_image(image_path):
     preprocess = transforms.Compose([
@@ -20,7 +34,7 @@ def load_image(image_path):
     image = Image.open(image_path)
     image = preprocess(image)
     image = image.unsqueeze(0)  # Add batch dimension
-    return image
+    return image.to(device)
 
 def cw_attack(model, image, label, targeted=False, c=1e-4, kappa=0, max_iter=100, learning_rate=0.01):
     # Set device
@@ -61,10 +75,16 @@ def cw_attack(model, image, label, targeted=False, c=1e-4, kappa=0, max_iter=100
     return perturbed_image.detach()
 
 def save_perturbed_images(directory, cw_directory):
-    if not os.path.exists(cw_directory):
-        os.makedirs(cw_directory)
+    if os.path.exists(cw_directory):
+        shutil.rmtree(cw_directory)
+    os.makedirs(cw_directory)
 
-    for filename in os.listdir(directory):
+    files=os.listdir(directory)
+    random.shuffle(files)
+    if args.num>0:
+        files=files[:args.num]
+    # 遍历目录中的所有图片
+    for filename in tqdm(files,desc="generating"):
         if filename.endswith(".jpg"):
             image_path = os.path.join(directory, filename)
             image = load_image(image_path)
@@ -75,11 +95,11 @@ def save_perturbed_images(directory, cw_directory):
             save_path = os.path.join(cw_directory, filename)
             save_image = transforms.ToPILImage()(perturbed_image.squeeze(0))
             save_image.save(save_path)
-            print(f'{filename} saved.')
+            # print(f'{filename} saved.')
 
 # Set directories and parameters
 test_directory = 'test'
-cw_directory = 'c_w'  # Directory for C&W adversarial images
+cw_directory = f'c_w_eps={args.eps}'  # Directory for C&W adversarial images
 
 # Generate and save adversarial images
 save_perturbed_images(test_directory, cw_directory)

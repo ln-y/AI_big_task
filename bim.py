@@ -1,16 +1,25 @@
 import torch
 from torchvision import transforms
 from PIL import Image
-import os
+import os,shutil
 from model import ViolenceClassifier  # 从model.py中导入模型类
 from pytorch_lightning import LightningModule
 from tqdm import tqdm
+import argparse
+import random
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-model',type=str,help="path of model file *.ckpt")
+parser.add_argument('-eps',type=float,help="the value of `epsilon`")
+parser.add_argument('-num',type=int,default=-1,help="the num of samples")
+args = parser.parse_args()
+print(args)
 
 device='cuda' if torch.cuda.is_available() else 'cpu'
 
 # 加载模型并设置为评估模式
 model = ViolenceClassifier()
-model_path = 'model/resnet18_pretrain_test-epoch=10-val_loss=0.06.ckpt'
+model_path = args.model
 model.load_from_checkpoint(model_path)
 model.eval()
 model.to(device)
@@ -52,11 +61,16 @@ def load_image(image_path):
 
 def save_perturbed_images(directory, bim_directory, epsilon, alpha, iters):
     # 确保输出文件夹存在
-    if not os.path.exists(bim_directory):
-        os.makedirs(bim_directory)
+    if os.path.exists(bim_directory):
+        shutil.rmtree(bim_directory)
+    os.makedirs(bim_directory)
 
+    files=os.listdir(directory)
+    random.shuffle(files)
+    if args.num>0:
+        files=files[:args.num]
     # 遍历目录中的所有图片
-    for filename in tqdm(os.listdir(directory)[:100],desc="generating"):
+    for filename in tqdm(files,desc="generating"):
         if filename.endswith(".jpg"):
             image_path = os.path.join(directory, filename)
             image = load_image(image_path)
@@ -72,8 +86,8 @@ def save_perturbed_images(directory, bim_directory, epsilon, alpha, iters):
 
 # 设置目录和参数
 test_directory = 'test'
-bim_directory = 'bim'
-epsilon = 0.1  # 最大扰动
+bim_directory = f'bim_eps={args.eps}'
+epsilon = args.eps  # 最大扰动
 alpha = 0.002    # 每一步的扰动
 iters = 50      # 迭代次数
 
