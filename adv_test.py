@@ -33,8 +33,8 @@ if __name__ == '__main__':
     model = ViolenceClassifier.load_from_checkpoint(ckpt_path)
     trainer = Trainer(accelerator=device, devices=device_count)
 
-
-    # 对抗测试集：FGSM, BIM, PGD, C&W
+    # 噪声测试集：guass，salt
+    # 对抗测试集：FGSM, BIM, PGD, C&W ,FGSM+PGD
     attacks = args.attacks
     for attack in attacks:
         attack=attack+f"_eps={args.eps}"
