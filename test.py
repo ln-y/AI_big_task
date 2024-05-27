@@ -32,6 +32,10 @@ if __name__ == '__main__':
     data_module.set_test_path('aigc_test')
     trainer.test(model, data_module)
 
+    print("Testing on noise test data")
+    data_module.set_test_path('noise_test')
+    trainer.test(model, data_module)
+
     print("Testing on all test data")
     data_module.set_test_path('all_test')
     trainer.test(model, data_module)

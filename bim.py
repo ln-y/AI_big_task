@@ -88,7 +88,7 @@ def save_perturbed_images(directory, bim_directory, epsilon, alpha, iters):
 test_directory = 'test'
 bim_directory = f'bim_eps={args.eps}'
 epsilon = args.eps  # 最大扰动
-alpha = 0.002    # 每一步的扰动
+alpha = 0.005    # 每一步的扰动
 iters = 50      # 迭代次数
 
 # 运行代码生成和保存对抗样本

@@ -1,10 +1,11 @@
 model_path="model/resnet18_pretrain_test-epoch=283-val_acc=0.96.ckpt"
 eps=0.1
-num=100 #0 means all
-
+num=0 #0 means all
+CUDA_VISIBLE_DEVICES=1
 noises=("gauss" "salt")
 attacks=("fgsm" "bim" "pgd" "c_w" "fgsm_pgd")
 
+export CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES
 ##测试噪声
 for noise in ${noises[@]}
 do

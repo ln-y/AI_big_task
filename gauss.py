@@ -63,4 +63,4 @@ input_directory = 'test'
 output_directory = f'gauss_eps={args.eps}'
 
 # 执行加噪声处理
-process_images(input_directory, output_directory, std=25.5, num=args.num)
+process_images(input_directory, output_directory, std=args.eps*255, num=args.num)
