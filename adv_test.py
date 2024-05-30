@@ -35,8 +35,6 @@ if __name__ == '__main__':
 
     attacks = args.attacks
 
-    
-        
 
     # 噪声测试集：guass，salt
     # 对抗测试集：FGSM, BIM, PGD, C&W ,FGSM+PGD
@@ -49,36 +47,3 @@ if __name__ == '__main__':
         print(f"Testing on {attack.upper()} perturbed data")
         data_module.set_test_path(os.path.join(os.getcwd(), attack))
         trainer.test(model, data_module)
-
-    from torchvision import transforms
-    from PIL import Image
-    from torchmetrics import Accuracy
-    import torch.nn as nn
-    from torch.utils.data import DataLoader, Dataset
-    # x=torch.load('0.pt')
-    # y=torch.load('1.pt')
-    # print(f"{model(x)=}\n{model(y)=}")
-    # print(f"{model.test_step((x,torch.tensor([0,0,0,0])),0)}\n{model.test_step((y,torch.tensor([0,0,0,0])),0)}")
-
-    paths=os.path.join(os.getcwd(), attacks[0]+f"_eps={args.eps}")
-    im_lst=[]
-    for ind,pic in enumerate(os.listdir(paths)):
-        preprocess = transforms.Compose([
-        transforms.ToTensor(),
-        ])
-        image = Image.open(f"{paths}/{pic}").convert("RGB")
-        image = preprocess(image)
-        im_lst.append(image)
-    image=torch.stack(im_lst)
-    print(image.shape)    
-    predictions=trainer.predict(model,dataloaders=DataLoader(image))
-    print(predictions)
-    # logits=model.test_step((image,torch.tensor([0,0,0,0])),0)
-    # # breakpoint()
-    # print(logits)
-    # print(image)
-    # if ind==1:
-    #     torch.save(image,"2.pt")
-    # accf=Accuracy(task="multiclass", num_classes=2)
-    # loss_fn = nn.CrossEntropyLoss()
-    # print(accf(logits,y),loss_fn(logits,y))

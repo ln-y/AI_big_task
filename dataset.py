@@ -49,10 +49,6 @@ class CustomDataset(Dataset):
 
     # @functools.lru_cache(40000)
     def __getitem__(self, index):
-        # self.time_record+=1
-        # print(self.time_record)
-        # if self.time_record==100:
-        #     self.time_record=0
         img_path = self.data[index]
         x = Image.open(img_path).convert("RGB")
         y = int(os.path.basename(img_path)[0]) # 获取标签值，0代表非暴力，1代表暴力

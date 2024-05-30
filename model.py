@@ -27,7 +27,7 @@ class ViolenceClassifier(LightningModule):
         self.ids=0
 
     def forward(self, x):
-        print("used")
+        # print("used")
         # breakpoint()
         return self.model(x)
 
@@ -56,11 +56,6 @@ class ViolenceClassifier(LightningModule):
         logits = self(x)
         loss = self.loss_fn(logits, y)
         acc = self.accuracy(logits, y)
-        # self.log('test_acc', acc)
-        print(f"{loss=}\n{acc=}")
-        print(f"{logits=}\n{y=}")
-        torch.save(x,f"{self.ids}.pt")
-        self.ids+=1
         return loss
     
     def on_train_epoch_end(self) -> None:

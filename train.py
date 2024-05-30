@@ -24,7 +24,7 @@ if __name__ == '__main__':
     acc_device='gpu' if torch.cuda.is_available() else 'cpu'
     print(f"using {acc_device=}")
     acc_id = [0] if torch.cuda.is_available() else None
-    lr = 3e-6
+    lr = 5e-6
     batch_size = 128
     log_name = "resnet18_pretrain_test"
     print("{} {}: {}, batch size: {}, lr: {}".format(log_name,acc_device, acc_id, batch_size, lr))
@@ -48,7 +48,7 @@ if __name__ == '__main__':
     # 实例化训练器
     trainer = Trainer(
         logger= logger,
-        max_epochs=2000,
+        max_epochs=700,
         accelerator=acc_device,
         devices=acc_id,
         callbacks=[checkpoint_callback,checkpoint_callback1],
