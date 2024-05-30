@@ -9,6 +9,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-model', type=str, help="path of model file *.ckpt")
 parser.add_argument('-eps', type=float, help="the value of `epsilon`")
 parser.add_argument('-num', type=int, default=-1, help="the num of samples")
+parser.add_argument('-path', type=str, default="test", help="the source file data")
 args = parser.parse_args()
 print(args)
 
@@ -62,7 +63,7 @@ def process_images(input_directory, output_directory, noise_density=0.05, num=-1
             noisy_image.save(os.path.join(output_directory, filename))
 
 # 设置输入输出目录
-input_directory = 'test'
+input_directory = args.path
 output_directory = f'salt_eps={args.eps}'
 
 noise_density=(args.eps*255/128)**2

@@ -81,6 +81,8 @@ def process_images(input_directory, output_directory, noise_threshold=0.1):
                 # 保存去噪后的图像
                 save_path = os.path.join(output_directory, filename)
                 preprocessed_image.save(save_path)
+            else:
+                image.save(save_path)
 
 if __name__ == "__main__":
     process_images(input_directory, output_directory, noise_threshold=noise_threshold)

@@ -7,6 +7,7 @@ from pytorch_lightning import LightningModule
 from tqdm import tqdm
 import argparse
 import random
+from typing import Optional
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-model',type=str,help="path of model file *.ckpt")
@@ -21,6 +22,12 @@ def fgsm_attack(image, epsilon, data_grad):
     perturbed_image = image + epsilon * sign_data_grad
     perturbed_image = torch.clamp(perturbed_image, 0, 1)  # 确保扰动后的图像仍然是有效的图像数据
     return perturbed_image
+
+def fgsm_attack(image:Image.Image,epsilon:float,model:LightningModule)->Optional[torch.Tensor]:
+    '''
+    return result tensor if successed
+    return None if failed
+    '''
 
 def load_image(image_path) -> torch.Tensor:
     # 图像预处理步骤

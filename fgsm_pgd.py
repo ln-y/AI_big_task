@@ -16,8 +16,8 @@ args = parser.parse_args()
 print(args)
 
 # 固定的PGD参数
-alpha = 0.001  # 步长
-num_steps = 500  # 迭代步数
+alpha = 0.07  # 步长
+num_steps = 50  # 迭代步数
 
 def fgsm_attack(image, epsilon, data_grad):
     sign_data_grad = data_grad.sign()
