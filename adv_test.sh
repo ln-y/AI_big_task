@@ -6,7 +6,7 @@ noises=("gauss" "salt")
 attacks=("new_fgsm") #"bim" "pgd" "c_w" "fgsm_pgd")
 
 
-export CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES
+export CUDA_VISIBLE_DEVICES= #$CUDA_VISIBLE_DEVICES
 
 for eps in 0.1
 do

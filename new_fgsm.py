@@ -22,8 +22,9 @@ print(args)
 def fgsm_attack(image: torch.Tensor, epsilon: float, step:float, model: ViolenceClassifier, label: torch.Tensor) -> Optional[torch.Tensor]:
     """Applies the FGSM attack and returns the perturbed image if the attack is successful."""
     image.requires_grad = True
+    
     output = model(image)
-
+    
     loss = model.loss_fn(output, label)
     model.zero_grad()
     loss.backward()
@@ -38,9 +39,13 @@ def fgsm_attack(image: torch.Tensor, epsilon: float, step:float, model: Violence
         perturbed_image = torch.clamp(perturbed_image, 0, 1)
 
         # 重新预测扰动后的图像
+        predictions=model(perturbed_image)
+        final_pred=torch.argmax(predictions)
+        input(f"{predictions=}\n,{final_pred=}")
         predictions=trainer.predict(model,dataloaders=DataLoader(perturbed_image))
         final_pred=torch.argmax(predictions[0])
-        input(f"{predictions=}\n,{final_pred}")
+        input(f"{predictions=}\n,{final_pred=}")
+        breakpoint()
 
         # 如果攻击成功且预测结果发生了类别变化，返回扰动后的图像张量；否则返回 None
         if final_pred.item() != label.item() and (final_pred.item() == 0 or final_pred.item() == 1):
@@ -70,6 +75,10 @@ def save_perturbed_images(directory, fgsm_directory, max_epsilon, step):
     model.load_from_checkpoint(model_path)
     model.eval()
     model.to(device)
+
+    
+    tested_tensor=torch.randn((4,3,244,244)).to(device)
+    trainer.predict(model,dataloaders=DataLoader(tested_tensor))
 
     files = os.listdir(directory)
     random.shuffle(files)

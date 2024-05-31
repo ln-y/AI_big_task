@@ -33,7 +33,10 @@ class ViolenceClassifier(LightningModule):
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate, weight_decay=self.l2_param)  # 定义优化器
-        return optimizer
+        scheduler = torch.optim.lr_scheduler.StepLR(
+            optimizer, step_size=10, gamma=0.94
+        )
+        return {'optimizer': optimizer, 'lr_scheduler': scheduler}
 
     def training_step(self, batch, batch_idx):
         x, y = batch
@@ -56,6 +59,7 @@ class ViolenceClassifier(LightningModule):
         logits = self(x)
         loss = self.loss_fn(logits, y)
         acc = self.accuracy(logits, y)
+        self.log('test_acc', acc)
         return loss
     
     def on_train_epoch_end(self) -> None:
