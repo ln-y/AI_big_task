@@ -42,6 +42,9 @@ def bim_attack(image: torch.Tensor, epsilon: float, alpha: float, iters: int, mo
         perturbed_image = torch.max(torch.min(perturbed_image, (image + epsilon).to(perturbed_image.dtype)),
                                     (image - epsilon).to(perturbed_image.dtype))
 
+        pil_image = transforms.ToPILImage()(perturbed_image.squeeze(0))
+        perturbed_image = transforms.ToTensor()(pil_image).unsqueeze(0).to(perturbed_image.device)  #处理浮点误差
+
         perturbed_image.requires_grad = True  # Set requires_grad to True for next iteration
 
         logits = model(perturbed_image)
@@ -73,7 +76,7 @@ def save_perturbed_images(directory, bim_directory, epsilon, alpha, iters):
     os.makedirs(bim_directory)
 
     model = ViolenceClassifier()
-    model.model.load_state_dict(torch.load('model2.pth'))
+    model.model.load_state_dict(torch.load(args.model))
     model.eval()
     model.to(device)
 
@@ -97,9 +100,9 @@ def save_perturbed_images(directory, bim_directory, epsilon, alpha, iters):
                 save_image.save(save_path)
                 success_img += 1
 
-    data_module.set_test_path(bim_directory)
-    trainer.test(model, datamodule=data_module)
-    torch.save(model.model.state_dict(), "model.pth")
+    # data_module.set_test_path(bim_directory)
+    # trainer.test(model, datamodule=data_module)
+    # torch.save(model.model.state_dict(), "model.pth")
 
     print(f"total success img:{success_img}")
 
