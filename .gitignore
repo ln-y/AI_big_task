@@ -3,6 +3,9 @@ lightning_logs/
 train_logs/
 *.png
 *.jpg
+*.pt
+*.pth
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

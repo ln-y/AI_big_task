@@ -1,4 +1,5 @@
 import torch
+import torch.nn as nn
 from torchvision import transforms
 from PIL import Image
 import os, shutil
@@ -9,22 +10,24 @@ import random
 from typing import Optional
 from pytorch_lightning import Trainer
 from torch.utils.data import DataLoader
+from dataset import CustomDataModule
 
 # 解析命令行参数
 parser = argparse.ArgumentParser()
-parser.add_argument('-model', type=str, help="path of model file *.ckpt")
+parser.add_argument('-model', type=str, help="path of model *.pth")
 parser.add_argument('-eps', type=float, help="maximum value of `epsilon`")
 parser.add_argument('-num', type=int, default=-1, help="the number of samples")
 parser.add_argument('-step', type=float, default=0.01, help="step size for increasing epsilon")
 args = parser.parse_args()
 print(args)
 
+success_pic={}
+
 def fgsm_attack(image: torch.Tensor, epsilon: float, step:float, model: ViolenceClassifier, label: torch.Tensor) -> Optional[torch.Tensor]:
     """Applies the FGSM attack and returns the perturbed image if the attack is successful."""
     image.requires_grad = True
     
     output = model(image)
-    
     loss = model.loss_fn(output, label)
     model.zero_grad()
     loss.backward()
@@ -37,15 +40,19 @@ def fgsm_attack(image: torch.Tensor, epsilon: float, step:float, model: Violence
     while used_eps<epsilon:
         perturbed_image = image + used_eps * sign_data_grad
         perturbed_image = torch.clamp(perturbed_image, 0, 1)
+        pil_image = transforms.ToPILImage()(perturbed_image.squeeze(0))
+        perturbed_image = transforms.ToTensor()(pil_image).unsqueeze(0).to(perturbed_image.device)
+
 
         # 重新预测扰动后的图像
-        predictions=model(perturbed_image)
-        final_pred=torch.argmax(predictions)
-        input(f"{predictions=}\n,{final_pred=}")
-        predictions=trainer.predict(model,dataloaders=DataLoader(perturbed_image))
-        final_pred=torch.argmax(predictions[0])
-        input(f"{predictions=}\n,{final_pred=}")
-        breakpoint()
+        # predictions=model(perturbed_image)
+        # final_pred=torch.argmax(predictions)
+        # input(f"{predictions=}\n,{final_pred=}")
+        # predictions=trainer.predict(model,dataloaders=DataLoader(perturbed_image))
+        # final_pred=torch.argmax(predictions[0])
+        # input(f"{predictions=}\n,{final_pred=}")
+        logits=model(perturbed_image)
+        final_pred=torch.argmax(logits)
 
         # 如果攻击成功且预测结果发生了类别变化，返回扰动后的图像张量；否则返回 None
         if final_pred.item() != label.item() and (final_pred.item() == 0 or final_pred.item() == 1):
@@ -71,14 +78,17 @@ def save_perturbed_images(directory, fgsm_directory, max_epsilon, step):
     os.makedirs(fgsm_directory)
 
     model = ViolenceClassifier()
-    model_path = args.model
-    model.load_from_checkpoint(model_path)
+    # model_path = args.model
+    # model.load_from_checkpoint(model_path)
+    model.model.load_state_dict(torch.load(args.model))
+    
+    # torch.save(model.model.state_dict(),"model1.pth")
     model.eval()
     model.to(device)
 
     
-    tested_tensor=torch.randn((4,3,244,244)).to(device)
-    trainer.predict(model,dataloaders=DataLoader(tested_tensor))
+    # tested_tensor=torch.randn((4,3,244,244)).to(device)
+    # trainer.predict(model,dataloaders=DataLoader(tested_tensor))
 
     files = os.listdir(directory)
     random.shuffle(files)
@@ -95,14 +105,27 @@ def save_perturbed_images(directory, fgsm_directory, max_epsilon, step):
             
             perturbed_image = fgsm_attack(image, max_epsilon,step, model, label)
             if perturbed_image is not None:
+                filename=filename.replace(".jpg",".png")
                 save_path = os.path.join(fgsm_directory, filename)
                 save_image = transforms.ToPILImage()(perturbed_image.squeeze(0))
                 save_image.save(save_path)
+
+                # test_im=load_image(save_path).to(perturbed_image.device)
+                # y=torch.sum(perturbed_image != test_im)
+                # assert y.item()==0,f"{y.item()=}\n{breakpoint()}"
+                # print(f"success in {save_path}")
                 success_img+=1
-                
+    data_module.set_test_path(fgsm_directory)
+    # from pt_test import test_in_path
+    # # model.model.load_state_dict(torch.load('model2.pth'))
+    # test_in_path(fgsm_directory,model.model)
     print(f"total success img:{success_img}")
 
+    # trainer.test(model,datamodule=data_module)
+    # torch.save(model.model.state_dict(),"model.pth")
+    
 
+data_module=CustomDataModule(batch_size=128)
 test_directory = 'test'
 fgsm_directory = f'new_fgsm_eps={args.eps}'
 max_epsilon = args.eps

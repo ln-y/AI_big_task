@@ -1,4 +1,4 @@
-model_path="train_logs/resnet18_pretrain_test/version_18/checkpoints/resnet18_pretrain_test-epoch=497-val_acc=0.99.ckpt"
+model_path="model2.pth"
 
 num=0 #0 means all
 CUDA_VISIBLE_DEVICES=3
@@ -6,7 +6,7 @@ noises=("gauss" "salt")
 attacks=("new_fgsm") #"bim" "pgd" "c_w" "fgsm_pgd")
 
 
-export CUDA_VISIBLE_DEVICES= #$CUDA_VISIBLE_DEVICES
+export CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES
 
 for eps in 0.1
 do
