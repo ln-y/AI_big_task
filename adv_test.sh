@@ -1,9 +1,9 @@
 model_path="model2.pth"
 
-num=0 #0 means all
+num=100 #0 means all
 CUDA_VISIBLE_DEVICES=3
 noises=("gauss" "salt")
-attacks=("new_fgsm") #"bim" "pgd" "c_w" "fgsm_pgd")
+attacks=("bim") #"bim" "pgd" "c_w" "fgsm_pgd")
 
 
 export CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES
