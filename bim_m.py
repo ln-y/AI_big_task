@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 import multiprocessing as mp
 from torchvision import transforms
 from PIL import Image
@@ -22,7 +23,7 @@ args = parser.parse_args()
 print(args)
 
 test_directory = 'test'
-bim_directory = f'bim_eps={args.eps}'
+bim_directory = f'bim_m_eps={args.eps}'
 epsilon = args.eps  # 最大扰动
 alpha = args.alpha  # 每一步的扰动
 iters = args.iters  # 迭代次数
@@ -64,12 +65,11 @@ def bim_attack(image: torch.Tensor, epsilon: float, alpha: float, iters: int, mo
 
     return None
 
-def load_image(image_path) -> torch.Tensor:
-    preprocess = transforms.Compose([
-        transforms.ToTensor(),
-    ])
+def load_image(image_path,device) -> torch.Tensor:
     image = Image.open(image_path).convert("RGB")
-    image = preprocess(image)
+    image = np.array(image)
+    image = torch.from_numpy(image).permute(2, 0, 1).to(device).contiguous()  # 调整维度顺序
+    image = (image/255).to(torch.float)
     image = image.unsqueeze(0)  # 添加批处理维度
     return image
 
@@ -119,7 +119,7 @@ def save_perturbed_images(directory, bim_directory):
 
 
 def task(files:List[str], directory:str, model_path:str, arr, id:int, queue):
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    device = f'cuda' if torch.cuda.is_available() else 'cpu'
     model = ViolenceClassifier()
     model.model.load_state_dict(torch.load(model_path))
     model.eval()
@@ -129,11 +129,12 @@ def task(files:List[str], directory:str, model_path:str, arr, id:int, queue):
     for filename in files:
         if filename.endswith(".jpg"):
             image_path = os.path.join(directory, filename)
-            image = load_image(image_path).to(device)
+            image = load_image(image_path,device)
             label = torch.tensor([int(filename.split('_')[0])]).to(device).view(-1)  # 将标签变为1D张量
 
             perturbed_image = bim_attack(image, epsilon, alpha, iters, model, label)
             if perturbed_image is not None:
+                perturbed_image=(perturbed_image*255).to(torch.uint8)
                 filename = filename.replace(".jpg", ".png")
                 save_path = os.path.join(bim_directory, filename)
                 save_image = transforms.ToPILImage()(perturbed_image.squeeze(0))

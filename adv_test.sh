@@ -1,9 +1,10 @@
 model_path="ed1.pth"
 
-num=100 #0 means all
-CUDA_VISIBLE_DEVICES=3
+num=0 #0 means all
+j=6
+CUDA_VISIBLE_DEVICES=2
 noises=("gauss" "salt")
-attacks=("new_fgsm" "bim") #"bim" "pgd" "c_w" "fgsm_pgd")
+attacks=( "bim_m") #"bim" "pgd" "c_w" "fgsm_pgd")
 
 
 export CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES
@@ -24,8 +25,8 @@ do
 
     for attack in ${attacks[@]}
     do
-        echo python ${attack}.py -model $model_path -eps $eps -num $num
-        python ${attack}.py -model $model_path -eps $eps -num $num
+        echo python ${attack}.py -model $model_path -eps $eps -num $num -j $j
+        python ${attack}.py -model $model_path -eps $eps -num $num -j $j
     done
 
     attacks_str=$(printf "%s " ${attacks[@]})

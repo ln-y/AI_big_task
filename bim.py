@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 from torchvision import transforms
 from PIL import Image
 import os, shutil
@@ -7,6 +8,7 @@ from tqdm import tqdm
 import argparse
 import random
 from typing import Optional
+
 
 # 解析命令行参数
 parser = argparse.ArgumentParser()
@@ -28,7 +30,7 @@ def bim_attack(image: torch.Tensor, epsilon: float, alpha: float, iters: int, mo
     device = image.device
     perturbed_image = image.clone().detach().to(device)  # Clone and detach to ensure it is a leaf variable
     perturbed_image.requires_grad = True
-
+    # breakpoint()
     for _ in range(iters):
         output = model(perturbed_image)
         loss = model.loss_fn(output, label)
@@ -59,9 +61,11 @@ def bim_attack(image: torch.Tensor, epsilon: float, alpha: float, iters: int, mo
 
     return None
 
-def load_image(image_path) -> torch.Tensor:
+def load_image(image_path,device) -> torch.Tensor:
     image = Image.open(image_path).convert("RGB")
-    image = preprocess(image)
+    image = np.array(image)
+    image = torch.from_numpy(image).permute(2, 0, 1).to(device).contiguous()  # 调整维度顺序
+    image = (image/255).to(torch.float)
     image = image.unsqueeze(0)  # 添加批处理维度
     return image
 
@@ -84,26 +88,37 @@ def save_perturbed_images(directory, bim_directory, epsilon, alpha, iters):
     random.shuffle(files)
     if args.num > 0:
         files = files[:args.num]
-    breakpoint()
-    success_img = 0
+    image_lst=[]
+    save_path_lst=[]
+    
     for filename in tqdm(files, desc="Generating adversarial images"):
         if filename.endswith(".jpg"):
             image_path = os.path.join(directory, filename)
-            image = load_image(image_path).to(device)
+            image = load_image(image_path,device)
             label = torch.tensor([int(filename.split('_')[0])]).to(device).view(-1)  # 将标签变为1D张量
 
             perturbed_image = bim_attack(image, epsilon, alpha, iters, model, label)
             if perturbed_image is not None:
+                perturbed_image=(perturbed_image*255).to(torch.uint8)
                 filename = filename.replace(".jpg", ".png")
                 save_path = os.path.join(bim_directory, filename)
-                save_image = transforms.ToPILImage()(perturbed_image.squeeze(0))
-                save_image.save(save_path)
-                success_img += 1
-    print(f"total success img:{success_img}")
+                save_path_lst.append(save_path)
+                image_lst.append(perturbed_image)
+    perturbed_images=torch.stack(image_lst,dim=0).to('cpu')
+    print(perturbed_images.shape)
+    for ind in tqdm(range(len(image_lst)),desc="saving"):
+        save_image = transforms.ToPILImage()(perturbed_images[ind][0])
+        save_image.save(save_path_lst[ind])
+    print(f"total success img:{len(image_lst)}")
 
 test_directory = 'test'
 bim_directory = f'bim_eps={args.eps}'
 epsilon = args.eps  # 最大扰动
 alpha = args.alpha  # 每一步的扰动
 iters = args.iters  # 迭代次数
-save_perturbed_images(test_directory, bim_directory, epsilon, alpha, iters)
+
+if __name__ == '__main__':
+    
+    save_perturbed_images(test_directory, bim_directory, epsilon, alpha, iters)
+    
+    
