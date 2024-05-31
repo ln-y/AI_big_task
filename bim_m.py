@@ -23,7 +23,7 @@ args = parser.parse_args()
 print(args)
 
 test_directory = 'test'
-bim_directory = f'bim_m_eps={args.eps}'
+bim_directory = f'bim_eps={args.eps}'
 epsilon = args.eps  # 最大扰动
 alpha = args.alpha  # 每一步的扰动
 iters = args.iters  # 迭代次数

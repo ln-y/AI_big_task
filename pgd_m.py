@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 import multiprocessing as mp
 from torchvision import transforms
 from PIL import Image
@@ -65,12 +66,11 @@ def pgd_attack(image: torch.Tensor, epsilon: float, alpha: float, iters: int, mo
     return None
 
 
-def load_image(image_path) -> torch.Tensor:
-    preprocess = transforms.Compose([
-        transforms.ToTensor(),
-    ])
+def load_image(image_path,device) -> torch.Tensor:
     image = Image.open(image_path).convert("RGB")
-    image = preprocess(image)
+    image = np.array(image)
+    image = torch.from_numpy(image).permute(2, 0, 1).to(device).contiguous()  # 调整维度顺序
+    image = (image/255).to(torch.float)
     image = image.unsqueeze(0)  # 添加批处理维度
     return image
 
@@ -127,7 +127,7 @@ def task(files: List[str], directory: str, model_path: str, arr, id: int, queue)
     for filename in files:
         if filename.endswith(".jpg"):
             image_path = os.path.join(directory, filename)
-            image = load_image(image_path).to(device)
+            image = load_image(image_path,device)
             label = torch.tensor([int(filename.split('_')[0])]).to(device).view(-1)  # 将标签变为1D张量
 
             perturbed_image = pgd_attack(image, epsilon, alpha, iters, model, label)
