@@ -1,4 +1,5 @@
 import torch
+import multiprocessing as mp
 from torchvision import transforms
 from PIL import Image
 import os, shutil
@@ -6,7 +7,8 @@ from model import ViolenceClassifier  # 从model.py中导入模型类
 from tqdm import tqdm
 import argparse
 import random
-from typing import Optional
+from typing import Optional, List
+import time
 
 # 解析命令行参数
 parser = argparse.ArgumentParser()
@@ -15,12 +17,15 @@ parser.add_argument('-eps', type=float, help="maximum value of `epsilon`")
 parser.add_argument('-num', type=int, default=-1, help="the number of samples")
 parser.add_argument('-alpha', type=float, default=0.005, help="step size for each iteration")
 parser.add_argument('-iters', type=int, default=50, help="number of iterations")
+parser.add_argument('-j',type=int,default=2,help="num of multiprocess")
 args = parser.parse_args()
 print(args)
 
-preprocess = transforms.Compose([
-        transforms.ToTensor(),
-    ])
+test_directory = 'test'
+bim_directory = f'bim_eps={args.eps}'
+epsilon = args.eps  # 最大扰动
+alpha = args.alpha  # 每一步的扰动
+iters = args.iters  # 迭代次数
 
 def bim_attack(image: torch.Tensor, epsilon: float, alpha: float, iters: int, model: ViolenceClassifier,
                label: torch.Tensor) -> Optional[torch.Tensor]:
@@ -41,7 +46,7 @@ def bim_attack(image: torch.Tensor, epsilon: float, alpha: float, iters: int, mo
         perturbed_image = torch.clamp(perturbed_image, 0, 1)  # Ensure pixel values are in [0, 1]
         perturbed_image = torch.max(torch.min(perturbed_image, (image + epsilon).to(perturbed_image.dtype)),
                                     (image - epsilon).to(perturbed_image.dtype))
-        
+
         # faster method
         perturbed_image = ((perturbed_image*255).to(torch.uint8)/255).to(torch.float)
 
@@ -60,13 +65,16 @@ def bim_attack(image: torch.Tensor, epsilon: float, alpha: float, iters: int, mo
     return None
 
 def load_image(image_path) -> torch.Tensor:
+    preprocess = transforms.Compose([
+        transforms.ToTensor(),
+    ])
     image = Image.open(image_path).convert("RGB")
     image = preprocess(image)
     image = image.unsqueeze(0)  # 添加批处理维度
     return image
 
-def save_perturbed_images(directory, bim_directory, epsilon, alpha, iters):
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+def save_perturbed_images(directory, bim_directory):
+    
 
     if os.path.exists(bim_directory):
         try:
@@ -75,18 +83,50 @@ def save_perturbed_images(directory, bim_directory, epsilon, alpha, iters):
             pass
     os.makedirs(bim_directory)
 
-    model = ViolenceClassifier()
-    model.model.load_state_dict(torch.load(args.model))
-    model.eval()
-    model.to(device)
-
     files = os.listdir(directory)
     random.shuffle(files)
     if args.num > 0:
         files = files[:args.num]
-    breakpoint()
+
+    arr=mp.Array('i',[0]*args.j)
+    que=mp.Queue()
+    p_lst=[]
+    per_task_len=len(files)/args.j
+
+    for i in range(args.j):
+        p=mp.Process(target=task,args=(files[int(per_task_len*i):int(per_task_len*(i+1))],directory,args.model,arr,i,que))
+        p_lst.append(p)
+        p.start()
+    
+    pbar=tqdm(total=len(files),desc="generating")
+    last_num=0
+    now_num=0
+    while now_num<len(files):
+        last_num=now_num
+        now_num=sum(arr)
+        pbar.update(now_num-last_num)
+        time.sleep(0.5)
+        
+    pbar.close()
+    p.join()
+    suc_num=0
+    while not que.empty():
+        suc_num+=que.get()
+
+    print(f"success:{suc_num}\nsuccess ratio:{suc_num/len(files)}")
+
+
+
+
+def task(files:List[str], directory:str, model_path:str, arr, id:int, queue):
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    model = ViolenceClassifier()
+    model.model.load_state_dict(torch.load(model_path))
+    model.eval()
+    model.to(device)
+
     success_img = 0
-    for filename in tqdm(files, desc="Generating adversarial images"):
+    for filename in files:
         if filename.endswith(".jpg"):
             image_path = os.path.join(directory, filename)
             image = load_image(image_path).to(device)
@@ -99,11 +139,10 @@ def save_perturbed_images(directory, bim_directory, epsilon, alpha, iters):
                 save_image = transforms.ToPILImage()(perturbed_image.squeeze(0))
                 save_image.save(save_path)
                 success_img += 1
-    print(f"total success img:{success_img}")
+        arr[id]+=1
+    queue.put(success_img)
 
-test_directory = 'test'
-bim_directory = f'bim_eps={args.eps}'
-epsilon = args.eps  # 最大扰动
-alpha = args.alpha  # 每一步的扰动
-iters = args.iters  # 迭代次数
-save_perturbed_images(test_directory, bim_directory, epsilon, alpha, iters)
+
+
+if __name__ == '__main__':
+    save_perturbed_images(test_directory, bim_directory)
