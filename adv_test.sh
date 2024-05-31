@@ -1,4 +1,4 @@
-model_path="model2.pth"
+model_path="ed1.pth"
 
 num=0 #0 means all
 CUDA_VISIBLE_DEVICES=3

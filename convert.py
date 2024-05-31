@@ -12,4 +12,5 @@ parser.add_argument("-ckpt",type=str,help="(src)path of *.ckpt")
 parser.add_argument("-pth",type=str,help="(dst)path of *.pth")
 args=parser.parse_args()
 
-
+model=ViolenceClassifier.load_from_checkpoint(args.ckpt)
+torch.save(model.model.state_dict(),args.pth)
