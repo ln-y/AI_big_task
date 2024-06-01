@@ -17,7 +17,7 @@ parser.add_argument('-model', type=str, help="path of model file *.ckpt")
 parser.add_argument('-eps', type=float, help="maximum value of `epsilon`")
 parser.add_argument('-num', type=int, default=-1, help="the number of samples")
 parser.add_argument('-alpha', type=float, default=0.005, help="step size for each iteration")
-parser.add_argument('-iters', type=int, default=50, help="number of iterations")
+parser.add_argument('-iters', type=int, default=20, help="number of iterations")
 parser.add_argument('-j', type=int, default=2, help="num of multiprocess")
 args = parser.parse_args()
 print(args)
@@ -64,7 +64,7 @@ def cw_attack(model, image, label, c=1e-4, kappa=0, max_iter=100, learning_rate=
         output = model(perturbed_image)
 
         real = output.gather(1, label.unsqueeze(1)).squeeze(1)
-        other = (output - 1e4 * torch.eye(output.shape[1])[label].to(device)).max(1)[0]
+        other = (output - c * torch.eye(output.shape[1])[label].to(device)).max(1)[0]
 
         loss1 = torch.relu(real - other + kappa)
         loss2 = torch.sum((perturbed_image - image) ** 2)
