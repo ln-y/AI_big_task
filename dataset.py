@@ -1,12 +1,20 @@
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 import torch
+import numpy as np
 import os
 from PIL import Image
 from torchvision import transforms
 from pytorch_lightning import LightningDataModule
 from tqdm import tqdm
 import functools
+
+def load_image(image_path,device) -> torch.Tensor:
+    image = Image.open(image_path).convert("RGB")
+    image = np.array(image)
+    image = torch.from_numpy(image).permute(2, 0, 1).to(device).contiguous()  # 调整维度顺序
+    image = (image/255).to(torch.float)
+    return image
 
 class CustomDataset(Dataset):
     def __init__(self, split, data_root=None,device=None):
@@ -19,11 +27,11 @@ class CustomDataset(Dataset):
         if split == "train":
             self.transforms = transforms.Compose([
                 transforms.RandomHorizontalFlip(),  # 随机翻转
-                transforms.ToTensor(),  # 将图像转换为Tensor
+                # transforms.ToTensor(),  # 将图像转换为Tensor
             ])
         else:
             self.transforms = transforms.Compose([
-                transforms.ToTensor(),  # 将图像转换为Tensor
+                # transforms.ToTensor(),  # 将图像转换为Tensor
             ])
         if data_root is not None:
             split_path=os.path.join(os.getcwd(),data_root)
@@ -50,24 +58,30 @@ class CustomDataset(Dataset):
     # @functools.lru_cache(40000)
     def __getitem__(self, index):
         img_path = self.data[index]
-        x = Image.open(img_path).convert("RGB")
+        x = load_image(img_path,self.device)
         y = int(os.path.basename(img_path)[0]) # 获取标签值，0代表非暴力，1代表暴力
         x = self.transforms(x)
         return x,y
         
 
 class CustomDataModule(LightningDataModule):
-    def __init__(self, batch_size=32, num_workers=4,test_path='test'):
+    def __init__(self, batch_size=32, num_workers=4,test_path='test',root_path="."):
         super().__init__()
         self.batch_size = batch_size
         self.num_workers = num_workers
-        self.test_path = test_path
+        self.test_path = f"{root_path}/{test_path}"
+        self.root_path = root_path
+
+
     def setup(self, stage=None):
         # 分割数据集、应用变换等
         # 创建 training, validation数据集
-        self.train_dataset = CustomDataset("train")
-        self.val_dataset = CustomDataset("val")
-        self.test_dataset = CustomDataset("test", data_root=self.test_path)
+        if stage=="test":
+            self.test_dataset = CustomDataset(f"{self.root_path}/test", data_root=self.test_path)
+        else:
+            self.train_dataset = CustomDataset("train",data_root=f"{self.root_path}/train")
+            self.val_dataset = CustomDataset("val",data_root=f"{self.root_path}/val")
+            self.test_dataset = CustomDataset("test", data_root=self.test_path)
 
     def train_dataloader(self):
         # print(f"train called")

@@ -3,20 +3,11 @@ import torch
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
-from pytorch_lightning.strategies import DDPStrategy
 
-from model import ViolenceClassifier
-from dataset import CustomDataModule
+from ..model import ViolenceClassifier
+from ..dataset import CustomDataModule
 
 model_weight_path="train_logs"
-
-
-def adv_train(echo_step:int, num:int):
-    '''
-    adv_train: 每过`echo_step`加入对抗样本进入train数据中
-    num: 每次加入train数据的样本数量
-    '''
-    return 0
 
 
 
