@@ -19,18 +19,19 @@ parser.add_argument('-num', type=int, default=-1, help="the number of samples")
 parser.add_argument('-alpha', type=float, default=0.005, help="step size for each iteration")
 parser.add_argument('-iters', type=int, default=50, help="number of iterations")
 parser.add_argument('-j',type=int,default=2,help="num of multiprocess")
+parser.add_argument('-test',type=str,default="../test",help="path of test")
 args = parser.parse_args()
 print(args)
 
-test_directory = 'test'
-pgd_directory = f'pgd_eps={args.eps}'
+test_directory = args.test
+bim_directory = f'bim_eps={args.eps}'
 epsilon = args.eps  # 最大扰动
 alpha = args.alpha  # 每一步的扰动
 iters = args.iters  # 迭代次数
 
-def pgd_attack(image: torch.Tensor, epsilon: float, alpha: float, iters: int, model: ViolenceClassifier,
+def bim_attack(image: torch.Tensor, epsilon: float, alpha: float, iters: int, model: ViolenceClassifier,
                label: torch.Tensor) -> Optional[torch.Tensor]:
-    """Applies the PGD attack and returns the perturbed image if the attack is successful."""
+    """Applies the BIM attack and returns the perturbed image if the attack is successful."""
     device = image.device
     perturbed_image = image.clone().detach().to(device)  # Clone and detach to ensure it is a leaf variable
     perturbed_image.requires_grad = True
@@ -43,13 +44,13 @@ def pgd_attack(image: torch.Tensor, epsilon: float, alpha: float, iters: int, mo
 
         # Apply FGSM attack per step using the sign of the data gradient
         data_grad = perturbed_image.grad.data
-        perturbed_image = perturbed_image + alpha * data_grad.sign()
+        perturbed_image = perturbed_image.detach() + alpha * data_grad.sign()
         perturbed_image = torch.clamp(perturbed_image, 0, 1)  # Ensure pixel values are in [0, 1]
         perturbed_image = torch.max(torch.min(perturbed_image, (image + epsilon).to(perturbed_image.dtype)),
                                     (image - epsilon).to(perturbed_image.dtype))
 
         # faster method
-        perturbed_image = ((perturbed_image * 255).to(torch.uint8) / 255).to(torch.float)
+        perturbed_image = ((perturbed_image*255).to(torch.uint8)/255).to(torch.float)
 
         # pil_image = transforms.ToPILImage()(perturbed_image.squeeze(0))
         # perturbed_image = transforms.ToTensor()(pil_image).unsqueeze(0).to(perturbed_image.device)  #处理浮点误差
@@ -65,7 +66,6 @@ def pgd_attack(image: torch.Tensor, epsilon: float, alpha: float, iters: int, mo
 
     return None
 
-
 def load_image(image_path,device) -> torch.Tensor:
     image = Image.open(image_path).convert("RGB")
     image = np.array(image)
@@ -74,50 +74,53 @@ def load_image(image_path,device) -> torch.Tensor:
     image = image.unsqueeze(0)  # 添加批处理维度
     return image
 
-def save_perturbed_images(directory, pgd_directory):
-    """This function manages the parallel generation and saving of adversarial images."""
-    if os.path.exists(pgd_directory):
+def save_perturbed_images(directory, bim_directory):
+    
+
+    if os.path.exists(bim_directory):
         try:
-            shutil.rmtree(pgd_directory)
+            shutil.rmtree(bim_directory)
         except FileNotFoundError:
             pass
-    os.makedirs(pgd_directory)
+    os.makedirs(bim_directory)
 
     files = os.listdir(directory)
     random.shuffle(files)
     if args.num > 0:
         files = files[:args.num]
 
-    arr = mp.Array('i', [0] * args.j)  # Multiprocessing array to keep track of progress
-    que = mp.Queue()  # Queue to store the count of successful images
-    p_lst = []
-    per_task_len = len(files) / args.j
+    arr=mp.Array('i',[0]*args.j)
+    que=mp.Queue()
+    p_lst=[]
+    per_task_len=len(files)/args.j
 
     for i in range(args.j):
-        p = mp.Process(target=task, args=(files[int(per_task_len * i):int(per_task_len * (i + 1))], directory, args.model, arr, i, que))
+        p=mp.Process(target=task,args=(files[int(per_task_len*i):int(per_task_len*(i+1))],directory,args.model,arr,i,que))
         p_lst.append(p)
         p.start()
-
-    pbar = tqdm(total=len(files), desc="generating")
-    last_num = 0
-    now_num = 0
-    while now_num < len(files):
-        last_num = now_num
-        now_num = sum(arr)
-        pbar.update(now_num - last_num)
+    
+    pbar=tqdm(total=len(files),desc="generating")
+    last_num=0
+    now_num=0
+    while now_num<len(files):
+        last_num=now_num
+        now_num=sum(arr)
+        pbar.update(now_num-last_num)
         time.sleep(0.5)
-
+        
     pbar.close()
     p.join()
-    suc_num = 0
+    suc_num=0
     while not que.empty():
-        suc_num += que.get()
+        suc_num+=que.get()
 
     print(f"success:{suc_num}\nsuccess ratio:{suc_num/len(files)}")
 
-def task(files: List[str], directory: str, model_path: str, arr, id: int, queue):
-    """Worker function for each process to generate adversarial images."""
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+
+
+def task(files:List[str], directory:str, model_path:str, arr, id:int, queue):
+    device = f'cuda' if torch.cuda.is_available() else 'cpu'
     model = ViolenceClassifier()
     model.model.load_state_dict(torch.load(model_path))
     model.eval()
@@ -130,15 +133,18 @@ def task(files: List[str], directory: str, model_path: str, arr, id: int, queue)
             image = load_image(image_path,device)
             label = torch.tensor([int(filename.split('_')[0])]).to(device).view(-1)  # 将标签变为1D张量
 
-            perturbed_image = pgd_attack(image, epsilon, alpha, iters, model, label)
+            perturbed_image = bim_attack(image, epsilon, alpha, iters, model, label)
             if perturbed_image is not None:
+                perturbed_image=(perturbed_image*255).to(torch.uint8)
                 filename = filename.replace(".jpg", ".png")
-                save_path = os.path.join(pgd_directory, filename)
+                save_path = os.path.join(bim_directory, filename)
                 save_image = transforms.ToPILImage()(perturbed_image.squeeze(0))
                 save_image.save(save_path)
                 success_img += 1
-        arr[id] += 1
+        arr[id]+=1
     queue.put(success_img)
 
+
+
 if __name__ == '__main__':
-    save_perturbed_images(test_directory, pgd_directory)
+    save_perturbed_images(test_directory, bim_directory)

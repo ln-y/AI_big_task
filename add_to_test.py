@@ -12,15 +12,15 @@ noise_test_ratio, noise_val_ratio = 0 ,0.2
 # if os.path.exists('aigc_test'):
 #     shutil.rmtree("aigc_test")
 
-if os.path.exists('noise_test'):
-    shutil.rmtree("noise_test")
+# if os.path.exists('noise_test'):
+#     shutil.rmtree("noise_test")
     
 # if os.path.exists('all_test'):
 #     shutil.rmtree("all_test")
     
 # os.makedirs("aigc_test")
 # os.makedirs("all_test")
-os.makedirs("noise_test")
+# os.makedirs("noise_test")
 
 for fi in os.listdir("test"):
     shutil.copy(f"test/{fi}",f"all_test/{fi}")

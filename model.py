@@ -9,9 +9,8 @@ from typing import Optional
 
 # attack_dic={'fgsm':fgsm_attack}
 
-
 class ViolenceClassifier(LightningModule):
-    def __init__(self, num_classes=2, learning_rate=1e-3, l2_param= 1e-5, adv_train_step:int=1):
+    def __init__(self, num_classes=2, learning_rate=1e-3, l2_param= 1e-5):
         super().__init__()
         self.model = models.resnet18(pretrained=True)
         num_ftrs = self.model.fc.in_features
@@ -22,9 +21,6 @@ class ViolenceClassifier(LightningModule):
         self.loss_fn = nn.CrossEntropyLoss()  # 交叉熵损失
         self.accuracy = Accuracy(task="multiclass", num_classes=2)
         self.l2_param=l2_param
-        self.echo_id=0
-        self.adv_train_step=adv_train_step
-        self.ids=0
 
     def forward(self, x):
         # print("used")
@@ -62,12 +58,7 @@ class ViolenceClassifier(LightningModule):
         self.log('test_acc', acc)
         return loss
     
-    def on_train_epoch_end(self) -> None:
-        self.echo_id+=1
-        # if self.echo_id%self.adv_train_step:
-
-        # print(f"hello:{self.echo_id}")
-        return super().on_epoch_end()
+    
 
 
 # def generate_adv_sample(num:int,algorithms:Optional[list],):

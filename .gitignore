@@ -5,6 +5,7 @@ train_logs/
 *.jpg
 *.pt
 *.pth
+AItask/
 
 
 # Byte-compiled / optimized / DLL files

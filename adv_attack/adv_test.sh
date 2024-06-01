@@ -1,10 +1,10 @@
-model_path="ed1.pth"
-
+model_path="../contrast.pth"
+test_path="../test"
 num=0 #0 means all
-j=6
+j=2
 CUDA_VISIBLE_DEVICES=2
 noises=("gauss" "salt")
-attacks=( "bim" "pgd" "cw" "fgsm")
+attacks=( "cw" ) #"bim" "pgd"  "fgsm")
 
 
 export CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES
@@ -25,8 +25,8 @@ do
 
     for attack in ${attacks[@]}
     do
-        echo python ${attack}_m.py -model $model_path -eps $eps -num $num -j $j
-        python ${attack}_m.py -model $model_path -eps $eps -num $num -j $j
+        echo python ${attack}_m.py -model $model_path -eps $eps -num $num -j $j -test $test_path
+        python ${attack}_m.py -model $model_path -eps $eps -num $num -j $j -test $test_path
     done
 
     attacks_str=$(printf "%s " ${attacks[@]})

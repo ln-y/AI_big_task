@@ -4,7 +4,6 @@ from pytorch_lightning import Trainer, LightningDataModule
 from pytorch_lightning.loggers import TensorBoardLogger
 from model import ViolenceClassifier
 from dataset import CustomDataModule
-from train import model_weight_path
 import argparse
 from denoise import process_images
 
@@ -43,24 +42,26 @@ if __name__ == '__main__':
     logger = TensorBoardLogger("test_logs", name=log_name)
 
     # 加载模型并创建训练器
-    model = ViolenceClassifier.load_from_checkpoint(ckpt_path)
+    model = ViolenceClassifier()
+    model.model.load_state_dict(torch.load(args.model))
     trainer = Trainer(accelerator=device, devices=device_count)
 
     # 测试原始测试数据
     eval_dir("test",args.denoise)
     eval_dir("aigc_test",args.denoise)
+    eval_dir("contrast_adv",args.denoise)
     eval_dir("noise_test",args.denoise)
-    eval_dir("all_test",args.denoise)
+    # eval_dir("all_test",args.denoise)
 
     # 对抗测试集：FGSM, BIM, PGD, C&W
-    attacks = ['fgsm', 'bim', 'pgd', 'c_w']
-    for attack in attacks:
-        if not os.path.exists(attack):
-            print(f"skipped {attack.upper()} data")
-            continue
-        print(f"Testing on {attack.upper()} perturbed data")
-        data_module.set_test_path(os.path.join(os.getcwd(), attack))
-        trainer.test(model, data_module)
+    # attacks = ['fgsm', 'bim', 'pgd', 'c_w']
+    # for attack in attacks:
+    #     if not os.path.exists(attack):
+    #         print(f"skipped {attack.upper()} data")
+    #         continue
+    #     print(f"Testing on {attack.upper()} perturbed data")
+    #     data_module.set_test_path(os.path.join(os.getcwd(), attack))
+    #     trainer.test(model, data_module)
 
     # aigc_img_path="images"
     # for r,d,f in os.walk(aigc_img_path):

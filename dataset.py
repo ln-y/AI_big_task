@@ -38,9 +38,12 @@ class CustomDataset(Dataset):
         else:
             split_path = os.path.join(os.getcwd(), split)
         self.data = [os.path.join(split_path, i) for i in os.listdir(split_path)]
-        
+        self.split_path=split_path
         # self.cache_lst=[self.get_cache(i) for i in tqdm(range(len(self.data)),desc="cache_pictures")]
         self.time_record=0
+    
+    def update_data(self):
+        self.data = [os.path.join(self.split_path, i) for i in os.listdir(self.split_path)]
         
     
     def get_cache(self, index):
@@ -65,19 +68,22 @@ class CustomDataset(Dataset):
         
 
 class CustomDataModule(LightningDataModule):
-    def __init__(self, batch_size=32, num_workers=4,test_path='test',root_path="."):
+    def __init__(self, batch_size=32, num_workers=0,test_path='test',root_path="."):
         super().__init__()
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.test_path = f"{root_path}/{test_path}"
         self.root_path = root_path
+        
 
+    def update_train(self):
+        self.train_dataset.update_data()
 
     def setup(self, stage=None):
         # 分割数据集、应用变换等
         # 创建 training, validation数据集
         if stage=="test":
-            self.test_dataset = CustomDataset(f"{self.root_path}/test", data_root=self.test_path)
+            self.test_dataset = CustomDataset(f"test", data_root=self.test_path)
         else:
             self.train_dataset = CustomDataset("train",data_root=f"{self.root_path}/train")
             self.val_dataset = CustomDataset("val",data_root=f"{self.root_path}/val")
