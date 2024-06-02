@@ -34,9 +34,14 @@ def pgd_attack(image: torch.Tensor, epsilon: float, alpha: float, iters: int, mo
     """Applies the PGD attack and returns the perturbed image if the attack is successful."""
     device = image.device
     perturbed_image = image.clone().detach().to(device)  # Clone and detach to ensure it is a leaf variable
-    perturbed_image.requires_grad = True
+
+    # Add initial random noise
+    noise = torch.empty_like(perturbed_image).uniform_(-alpha, alpha).to(device)
+    perturbed_image = perturbed_image + noise
+    perturbed_image = torch.clamp(perturbed_image, 0, 1)
 
     for _ in range(iters):
+        perturbed_image.requires_grad = True
         output = model(perturbed_image)
         loss = model.loss_fn(output, label)
         model.zero_grad()
@@ -44,25 +49,19 @@ def pgd_attack(image: torch.Tensor, epsilon: float, alpha: float, iters: int, mo
 
         # Apply FGSM attack per step using the sign of the data gradient
         data_grad = perturbed_image.grad.data
-        perturbed_image = perturbed_image + alpha * data_grad.sign()
+        perturbed_image = perturbed_image.detach() + alpha * data_grad.sign()
+        perturbed_image = torch.max(torch.min(perturbed_image, image + epsilon), image - epsilon)
         perturbed_image = torch.clamp(perturbed_image, 0, 1)  # Ensure pixel values are in [0, 1]
-        perturbed_image = torch.max(torch.min(perturbed_image, (image + epsilon).to(perturbed_image.dtype)),
-                                    (image - epsilon).to(perturbed_image.dtype))
 
         # faster method
         perturbed_image = ((perturbed_image * 255).to(torch.uint8) / 255).to(torch.float)
 
-        # pil_image = transforms.ToPILImage()(perturbed_image.squeeze(0))
-        # perturbed_image = transforms.ToTensor()(pil_image).unsqueeze(0).to(perturbed_image.device)  #处理浮点误差
+    logits = model(perturbed_image)
+    final_pred = torch.argmax(logits)
 
-        perturbed_image.requires_grad = True  # Set requires_grad to True for next iteration
-
-        logits = model(perturbed_image)
-        final_pred = torch.argmax(logits)
-
-        # 如果攻击成功且预测结果发生了类别变化，返回扰动后的图像张量；否则返回 None
-        if final_pred.item() != label.item() and (final_pred.item() == 0 or final_pred.item() == 1):
-            return perturbed_image
+    # 如果攻击成功且预测结果发生了类别变化，返回扰动后的图像张量；否则返回 None
+    if final_pred.item() != label.item() and (final_pred.item() == 0 or final_pred.item() == 1):
+        return perturbed_image
 
     return None
 
