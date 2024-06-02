@@ -4,15 +4,15 @@ num=0 #0 means all
 j=3
 CUDA_VISIBLE_DEVICES=2
 noises=("gauss" "salt")
-attacks=( "cw"  "bim" "pgd"  "fgsm")
+attacks=( "cw"  ) #"bim" "pgd"  "fgsm")
 mode="black"
-iters=30
-alpha=0.001
+iters=50
+alpha=0.002
 
 
 export CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES
 
-for eps in 0.02
+for eps in 0.03
 do
     ##测试噪声
     # for noise in ${noises[@]}

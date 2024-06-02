@@ -45,7 +45,7 @@ if __name__ == '__main__':
     trainer = Trainer(accelerator='gpu' if device=="cuda" else device, devices=[0] if device=="cuda" else 1, logger=logger)
 
     # 测试数据集的名称 #['contrast_adv']#
-    datasets =  ['contrast_adv']#['fgsm_eps=0.03','cw_eps=0.03',"bim_eps=0.03","pgd_eps=0.03"]
+    datasets =  ['cw_eps=0.03']#['fgsm_eps=0.03','cw_eps=0.03',"bim_eps=0.03","pgd_eps=0.03"]
     # 初始化变量来存储结果
     all_roc_aucs = []
     all_precisions = []

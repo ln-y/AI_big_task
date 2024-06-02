@@ -16,7 +16,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-model', type=str, help="path of model file *.ckpt")
 parser.add_argument('-eps', type=float, help="maximum value of `epsilon`")
 parser.add_argument('-num', type=int, default=-1, help="the number of samples")
-parser.add_argument('-alpha', type=float, default=0.005, help="step size for each iteration")
+parser.add_argument('-alpha', type=float, default=1e-3, help="step size for each iteration")
 parser.add_argument('-iters', type=int, default=20, help="number of iterations")
 parser.add_argument('-j', type=int, default=2, help="num of multiprocess")
 parser.add_argument('-test', type=str, default="../test", help="path of test")
@@ -32,7 +32,7 @@ iters = args.iters  # 迭代次数
 mode = args.mode
 
 
-def eps_to_c(eps, base_c=1e-4, reference_eps=0.1):
+def eps_to_c(eps, p=1):
     """
     Convert FGSM epsilon to C&W's c parameter.
 
@@ -42,13 +42,13 @@ def eps_to_c(eps, base_c=1e-4, reference_eps=0.1):
     :return: Approximated c value for C&W attack.
     """
     # Assume a quadratic relationship between eps and c
-    return base_c * (eps / reference_eps) ** 2
+    return p/(eps*255)**2
 
 
 c = eps_to_c(epsilon)
 
 
-def cw_attack(model, image, label, c=1e-4, kappa=0, max_iter=100, learning_rate=0.01, mode='black'):
+def cw_attack(model, image:torch.Tensor, label, c=1e-4, kappa=0, max_iter=100, learning_rate=0.01, mode='black'):
     # Set device
     global perturbed_image
     device = next(model.parameters()).device
@@ -60,27 +60,30 @@ def cw_attack(model, image, label, c=1e-4, kappa=0, max_iter=100, learning_rate=
     box_max = torch.ones_like(image).to(device)
 
     # Initialize perturbation
-    w = torch.arctanh(image-0.5)
+    w = torch.arctanh((image-0.5)*2)
     w.requires_grad = True
 
     optimizer = torch.optim.Adam([w], lr=learning_rate)
 
     for i in range(max_iter):
+        
         perturbed_image = torch.tanh(w) * 0.5 + 0.5  # Scale to [0, 1]
-        perturbed_image = image + perturbed_image * (box_max - box_min)
+        # perturbed_image = image + perturbed_image * (box_max - box_min)
         output = model(perturbed_image)
-
-        real = output.gather(1, label.unsqueeze(1)).squeeze(1)
-        other = (output - c * torch.eye(output.shape[1])[label].to(device)).max(1)[0]
+        # input(f"{torch.mean(perturbed_image)=}\n{torch.mean(image)=}")
+        real = output[0][label]
+        other = output[0][(label.item()+1)%2]
+        # input(f"{output=}\n{real=}\n{other=}")
 
         loss1 = torch.relu(real - other + kappa)
-        loss2 = torch.sum((perturbed_image - image) ** 2)
+        loss2 = torch.mean((perturbed_image - image) ** 2)
         loss = loss1 + c * loss2
 
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
+        perturbed_image = torch.tanh(w) * 0.5 + 0.5
         perturbed_image = ((perturbed_image * 255).to(torch.uint8) / 255).to(torch.float)
         # 白盒攻击，每次迭代均检测
         if mode == "white":
