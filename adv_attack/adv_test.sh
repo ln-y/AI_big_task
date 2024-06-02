@@ -1,15 +1,18 @@
 model_path="../contrast.pth"
 test_path="../test"
 num=0 #0 means all
-j=2
+j=3
 CUDA_VISIBLE_DEVICES=2
 noises=("gauss" "salt")
-attacks=( "cw" ) #"bim" "pgd"  "fgsm")
+attacks=( "cw"  "bim" "pgd"  "fgsm")
+mode="black"
+iters=30
+alpha=0.001
 
 
 export CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES
 
-for eps in 0.1
+for eps in 0.02
 do
     ##测试噪声
     # for noise in ${noises[@]}
@@ -25,8 +28,8 @@ do
 
     for attack in ${attacks[@]}
     do
-        echo python ${attack}_m.py -model $model_path -eps $eps -num $num -j $j -test $test_path
-        python ${attack}_m.py -model $model_path -eps $eps -num $num -j $j -test $test_path
+        echo python ${attack}_m.py -model $model_path -eps $eps -num $num -j $j -test $test_path -mode=$mode -iters $iters -alpha $alpha
+        python ${attack}_m.py -model $model_path -eps $eps -num $num -j $j -test $test_path -mode=$mode -iters $iters -alpha $alpha
     done
 
     attacks_str=$(printf "%s " ${attacks[@]})

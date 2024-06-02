@@ -60,7 +60,7 @@ def cw_attack(model, image, label, c=1e-4, kappa=0, max_iter=100, learning_rate=
     box_max = torch.ones_like(image).to(device)
 
     # Initialize perturbation
-    w = torch.zeros_like(image).to(device)
+    w = torch.arctanh(image-0.5)
     w.requires_grad = True
 
     optimizer = torch.optim.Adam([w], lr=learning_rate)
