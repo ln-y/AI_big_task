@@ -56,12 +56,12 @@ def pgd_attack(image: torch.Tensor, epsilon: float, alpha: float, iters: int, mo
         # faster method
         perturbed_image = ((perturbed_image * 255).to(torch.uint8) / 255).to(torch.float)
 
-    logits = model(perturbed_image)
-    final_pred = torch.argmax(logits)
+        logits = model(perturbed_image)
+        final_pred = torch.argmax(logits)
 
-    # 如果攻击成功且预测结果发生了类别变化，返回扰动后的图像张量；否则返回 None
-    if final_pred.item() != label.item() and (final_pred.item() == 0 or final_pred.item() == 1):
-        return perturbed_image
+        # 如果攻击成功且预测结果发生了类别变化，返回扰动后的图像张量；否则返回 None
+        if final_pred.item() != label.item() and (final_pred.item() == 0 or final_pred.item() == 1):
+            return perturbed_image
 
     return None
 
