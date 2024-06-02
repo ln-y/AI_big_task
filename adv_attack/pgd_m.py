@@ -20,6 +20,7 @@ parser.add_argument('-alpha', type=float, default=0.005, help="step size for eac
 parser.add_argument('-iters', type=int, default=50, help="number of iterations")
 parser.add_argument('-j',type=int,default=2,help="num of multiprocess")
 parser.add_argument('-test',type=str,default="../test",help="path of test")
+parser.add_argument('-mode', type=str, default="black", help="black or white")
 args = parser.parse_args()
 print(args)
 
@@ -28,9 +29,10 @@ pgd_directory = f'pgd_eps={args.eps}'
 epsilon = args.eps  # 最大扰动
 alpha = args.alpha  # 每一步的扰动
 iters = args.iters  # 迭代次数
+mode = args.mode # 黑盒/白盒攻击
 
 def pgd_attack(image: torch.Tensor, epsilon: float, alpha: float, iters: int, model: ViolenceClassifier,
-               label: torch.Tensor) -> Optional[torch.Tensor]:
+               label: torch.Tensor, mode: str) -> Optional[torch.Tensor]:
     """Applies the PGD attack and returns the perturbed image if the attack is successful."""
     device = image.device
     perturbed_image = image.clone().detach().to(device)  # Clone and detach to ensure it is a leaf variable
@@ -56,13 +58,20 @@ def pgd_attack(image: torch.Tensor, epsilon: float, alpha: float, iters: int, mo
         # faster method
         perturbed_image = ((perturbed_image * 255).to(torch.uint8) / 255).to(torch.float)
 
-        logits = model(perturbed_image)
-        final_pred = torch.argmax(logits)
+        # 白盒攻击，每次迭代均检测
+        if mode == "white":
+            logits = model(perturbed_image)
+            final_pred = torch.argmax(logits)
 
         # 如果攻击成功且预测结果发生了类别变化，返回扰动后的图像张量；否则返回 None
-        if final_pred.item() != label.item() and (final_pred.item() == 0 or final_pred.item() == 1):
-            return perturbed_image
+            if final_pred.item() != label.item() and (final_pred.item() == 0 or final_pred.item() == 1):
+                return perturbed_image
 
+    # 黑盒攻击：最后检测
+    logits = model(perturbed_image)
+    final_pred = torch.argmax(logits)
+    if final_pred.item() != label.item() and (final_pred.item() == 0 or final_pred.item() == 1):
+        return perturbed_image
     return None
 
 
@@ -130,7 +139,7 @@ def task(files: List[str], directory: str, model_path: str, arr, id: int, queue)
             image = load_image(image_path,device)
             label = torch.tensor([int(filename.split('_')[0])]).to(device).view(-1)  # 将标签变为1D张量
 
-            perturbed_image = pgd_attack(image, epsilon, alpha, iters, model, label)
+            perturbed_image = pgd_attack(image, epsilon, alpha, iters, model, label,mode)
             if perturbed_image is not None:
                 filename = filename.replace(".jpg", ".png")
                 save_path = os.path.join(pgd_directory, filename)

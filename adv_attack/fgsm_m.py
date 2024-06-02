@@ -20,6 +20,7 @@ parser.add_argument('-alpha', type=float, default=0.005, help="step size for eac
 parser.add_argument('-iters', type=int, default=50, help="number of iterations")
 parser.add_argument('-j', type=int, default=2, help="num of multiprocess")
 parser.add_argument('-test',type=str,default="../test",help="path of test")
+parser.add_argument('-mode', type=str, default="black", help="black or white")
 args = parser.parse_args()
 print(args)
 
