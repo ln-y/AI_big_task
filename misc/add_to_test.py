@@ -22,14 +22,14 @@ noise_test_ratio, noise_val_ratio = 0 ,0.2
 # os.makedirs("all_test")
 # os.makedirs("noise_test")
 
-for fi in os.listdir("test"):
+for fi in os.listdir("../test"):
     shutil.copy(f"test/{fi}",f"all_test/{fi}")
 
-for fi in os.listdir("val"):
+for fi in os.listdir("../val"):
     if  '_noise.jpg' in fi:
         os.remove(f"val/{fi}")
 
-for fi in os.listdir("train"):
+for fi in os.listdir("../train"):
     if '_noise.jpg' in fi:
         os.remove(f"train/{fi}")
 
