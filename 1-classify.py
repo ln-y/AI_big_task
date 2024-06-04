@@ -1,11 +1,16 @@
 import json
-
 import torch
-from model import ViolenceClassifier
+import sys
 from torchvision import transforms
 from PIL import Image
 import os
 from tqdm import tqdm  # 引入 tqdm 库
+
+model_path = os.path.join(os.getcwd(), '1-其他支持文件和目录')
+if model_path not in sys.path:
+    sys.path.append(model_path)
+
+from model import ViolenceClassifier
 
 class ViolenceClass:
     def __init__(self, model_path: str, device: str = 'cuda:0'):
@@ -47,11 +52,11 @@ if __name__ == "__main__":
     ])
 
     # 加载 'test' 文件夹中的图片
-    test_folder = 'test'
+    test_folder = '1-其他支持文件和目录/test'
     batch_images = load_images_from_folder(test_folder, transform)
 
     # 使用 ViolenceClass 进行分类
-    classifier = ViolenceClass(model_path="model/ed2.pth")
+    classifier = ViolenceClass(model_path="1-其他支持文件和目录/model/ed2.pth")
     predictions = classifier.classify(batch_images)
     with open(f"classify.py.json", "w") as f:
         json.dump(predictions, f)
