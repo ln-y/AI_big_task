@@ -4,7 +4,7 @@ train_logs/
 *.png
 *.jpg
 *.pt
-*.pth
+#*.pth
 AItask/
 train_*/
 test_logs/
@@ -167,7 +167,7 @@ dmypy.json
 cython_debug/
 
 
-model/
+
 test/
 train/
 val/

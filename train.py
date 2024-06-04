@@ -6,7 +6,7 @@ from pytorch_lightning.loggers import TensorBoardLogger
 from tqdm import tqdm
 from model import ViolenceClassifier
 from dataset import CustomDataModule
-from adv_attack.adv_attack import Adv_generator
+from noise_and_attack.adv_attack import Adv_generator
 from typing import Optional,Tuple
 
 model_weight_path="train_logs"

@@ -51,7 +51,7 @@ if __name__ == "__main__":
     batch_images = load_images_from_folder(test_folder, transform)
 
     # 使用 ViolenceClass 进行分类
-    classifier = ViolenceClass(model_path="model/ed2_1_acc.pth")
+    classifier = ViolenceClass(model_path="model/ed2.pth")
     predictions = classifier.classify(batch_images)
     with open(f"classify.py.json", "w") as f:
         json.dump(predictions, f)

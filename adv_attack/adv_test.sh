@@ -14,16 +14,16 @@ export CUDA_VISIBLE_DEVICES=$CUDA_VISIBLE_DEVICES
 
 for eps in 0.03
 do
-    ##测试噪声
-    # for noise in ${noises[@]}
-    # do
-    #     echo python ${noise}.py -model $model_path -eps $eps -num $num
-    #     python ${noise}.py -model $model_path -eps $eps -num $num
-    # done
+    #测试噪声
+     for noise in ${noises[@]}
+     do
+         echo python ${noise}.py -model $model_path -eps $eps -num $num
+         python ${noise}.py -model $model_path -eps $eps -num $num
+     done
 
-    # noises_str=$(printf "%s " ${noises[@]})
-    # echo python adv_test.py -model $model_path -eps $eps --attacks $noises_str
-    # python adv_test.py -model $model_path -eps $eps --attacks $noises_str
+     noises_str=$(printf "%s " ${noises[@]})
+     echo python adv_test.py -model $model_path -eps $eps --attacks $noises_str
+     python adv_test.py -model $model_path -eps $eps --attacks $noises_str
 
 
     for attack in ${attacks[@]}
