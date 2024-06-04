@@ -24,28 +24,27 @@ class ViolenceClass:
 
     def classify(self, imgs: torch.Tensor) -> list:
         imgs = imgs.to(self.device)  # 将输入张量移动到相应的设备上
-        preds = []
         with torch.no_grad():  # 禁用梯度计算
-            for i in tqdm(range(len(imgs)), desc="Classifying"):  # 添加进度条
-                output = self.model(imgs[i].unsqueeze(0))  # 对每张图像进行推理
-                _, pred = torch.max(output, 1)  # 获取预测类别
-                preds.append(pred.item())
-        return preds  # 返回预测结果列表
+            output=self.model(imgs)
+            _, pred = torch.max(output, 1)
+        return pred.tolist()  # 返回预测结果列表
 
-## 以下为试验代码，实际不需要
-def load_images_from_folder(folder: str, transform) -> torch.Tensor:
-    images = []
-    for filename in os.listdir(folder):
-        if filename.endswith(".jpg") or filename.endswith(".png"):
-            img_path = os.path.join(folder, filename)
-            image = Image.open(img_path).convert("RGB")
-            image = transform(image)
-            images.append(image)
-    if len(images) == 0:
-        raise ValueError(f"No images found in folder: {folder}")
-    return torch.stack(images)
+
 
 if __name__ == "__main__":
+    ## 以下为试验代码，实际不需要
+    def load_images_from_folder(folder: str, transform) -> torch.Tensor:
+        images = []
+        for filename in os.listdir(folder):
+            if filename.endswith(".jpg") or filename.endswith(".png"):
+                img_path = os.path.join(folder, filename)
+                image = Image.open(img_path).convert("RGB")
+                image = transform(image)
+                images.append(image)
+        if len(images) == 0:
+            raise ValueError(f"No images found in folder: {folder}")
+        return torch.stack(images)
+    
     transform = transforms.Compose([
         transforms.Resize((224, 224)),
         transforms.ToTensor(),
@@ -58,6 +57,4 @@ if __name__ == "__main__":
     # 使用 ViolenceClass 进行分类
     classifier = ViolenceClass(model_path="1-其他支持文件和目录/model/ed2.pth")
     predictions = classifier.classify(batch_images)
-    with open(f"classify.py.json", "w") as f:
-        json.dump(predictions, f)
     print(predictions)

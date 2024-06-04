@@ -1,5 +1,5 @@
 
-1-其他支持文件和目录/lightning_logs/
+*lightning_logs/
 train_logs/
 *.png
 *.jpg
@@ -8,6 +8,8 @@ train_logs/
 AItask/
 train_*/
 test_logs/
+*.pth
+
 
 
 # Byte-compiled / optimized / DLL files
