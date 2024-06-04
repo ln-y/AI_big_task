@@ -1,16 +1,15 @@
-import json
 import torch
 import sys
 from torchvision import transforms
 from PIL import Image
 import os
-from tqdm import tqdm  # 引入 tqdm 库
 
 model_path = os.path.join(os.getcwd(), '1-其他支持文件和目录')
 if model_path not in sys.path:
     sys.path.append(model_path)
 
 from model import ViolenceClassifier
+
 
 class ViolenceClass:
     def __init__(self, model_path: str, device: str = 'cuda:0'):
@@ -25,14 +24,13 @@ class ViolenceClass:
     def classify(self, imgs: torch.Tensor) -> list:
         imgs = imgs.to(self.device)  # 将输入张量移动到相应的设备上
         with torch.no_grad():  # 禁用梯度计算
-            output=self.model(imgs)
+            output = self.model(imgs)
             _, pred = torch.max(output, 1)
         return pred.tolist()  # 返回预测结果列表
 
 
-
 if __name__ == "__main__":
-    ## 以下为试验代码，实际不需要
+    ## 调用实例
     def load_images_from_folder(folder: str, transform) -> torch.Tensor:
         images = []
         for filename in os.listdir(folder):
@@ -44,7 +42,8 @@ if __name__ == "__main__":
         if len(images) == 0:
             raise ValueError(f"No images found in folder: {folder}")
         return torch.stack(images)
-    
+
+
     transform = transforms.Compose([
         transforms.Resize((224, 224)),
         transforms.ToTensor(),
