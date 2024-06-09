@@ -68,4 +68,4 @@ output_directory = f'salt_eps={args.eps}'
 
 noise_density=(args.eps*255/128)**2
 # 执行加噪声处理
-process_images(input_directory, output_directory, noise_density=args.eps, num=args.num)
+process_images(input_directory, output_directory, noise_density=noise_density, num=args.num)
