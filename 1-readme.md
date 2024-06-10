@@ -136,3 +136,8 @@ print(predictions)
 
 - `classifier.classify(batch_images)`：对图像批次进行分类，返回预测结果列表。
 - `print(predictions)`：打印预测结果列表。
+
+<br/>
+<br/>
+
+#### ps：由于数据集过大未上传，"1-其他支持文件和目录"中的代码若要运行，则需手动将数据集和文件放到代码中规定的路径
